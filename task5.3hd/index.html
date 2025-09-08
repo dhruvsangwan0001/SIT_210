@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LED Control</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <h1>LED Control</h1>
+    
+    <div class="status">
+        Red: <span id="red-status">OFF</span><br>
+        Green: <span id="green-status">OFF</span><br>
+        Blue: <span id="blue-status">OFF</span>
+    </div>
+    
+    <button class="red" onclick="toggleLED('red')">Toggle Red</button>
+    <button class="green" onclick="toggleLED('green')">Toggle Green</button>
+    <button class="blue" onclick="toggleLED('blue')">Toggle Blue</button>
+
+    <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getDatabase, ref, set, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCgaXAF2Dj5LMjN5F48vCzwLAZf6qr5bCU",
+            authDomain: "sit210-825ad.firebaseapp.com",
+            databaseURL: "https://sit210-825ad-default-rtdb.firebaseio.com",
+            projectId: "sit210-825ad",
+            storageBucket: "sit210-825ad.firebasestorage.app",
+            messagingSenderId: "716968407341",
+            appId: "1:716968407341:web:5447e78db3fae3ce5d63a4"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        
+
+        // LED states
+        let leds = { red: false, green: false, blue: false };
+
+        // Toggle LED function
+        window.toggleLED = function(color) {
+            leds[color] = !leds[color];
+            
+            // Update Firebase
+            const ledsRef = ref(database, 'leds');
+            set(ledsRef, leds);
+            
+            // Update display
+            document.getElementById(color + '-status').textContent = leds[color] ? 'ON' : 'OFF';
+        }
+
+        // Listen for changes
+        const ledsRef = ref(database, 'leds');
+        onValue(ledsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                leds = data;
+                document.getElementById('red-status').textContent = data.red ? 'ON' : 'OFF';
+                document.getElementById('green-status').textContent = data.green ? 'ON' : 'OFF';
+                document.getElementById('blue-status').textContent = data.blue ? 'ON' : 'OFF';
+            }
+        });
+    </script>
+</body>
+</html>
