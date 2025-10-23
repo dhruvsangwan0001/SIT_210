@@ -1,8 +1,10 @@
-
 from flask import Flask, render_template_string
 import folium
 import paho.mqtt.client as mqtt
 import json
+import smtplib
+from email.mime.text import MIMEText
+import os
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -11,9 +13,37 @@ car_lat = 0.0
 car_lng = 0.0
 distance_cm = None
 proximity_alert = False
+email_sent = False  # to prevent repeated emails
+
+# ---------- ThingSpeak Configuration ----------
+THINGSPEAK_API = "OPAPZZ0MCCOPS05E"  # replace with your key
+THINGSPEAK_URL = "https://api.thingspeak.com/update"
+
+# ---------- Email Configuration ----------
+EMAIL = "dhruvsangwan1196@gmail.com"
+PASSWORD = "ehbk wyam mowl oxyh"  # App password
+TO = "sangwandhruv28@gmail.com"
+
+def send_email(subject, message):
+    msg = MIMEText(message)
+    msg["Subject"] = subject
+    msg["From"] = EMAIL
+    msg["To"] = TO
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
+            smtp.starttls()
+            smtp.login(EMAIL, PASSWORD)
+            smtp.send_message(msg)
+        print("📧 Email sent successfully!")
+    except Exception as e:
+        print("❌ Email failed:", e)
+
+def speak(message):
+    os.system(f'espeak "{message}"')
+
 
 def on_message(client, userdata, msg):
-    global car_lat, car_lng, distance_cm, proximity_alert
+    global car_lat, car_lng, distance_cm, proximity_alert, email_sent
 
     try:
         topic = msg.topic
@@ -29,10 +59,20 @@ def on_message(client, userdata, msg):
             distance_cm = data.get("distance_cm")
             proximity_alert = data.get("alert") == "object_too_close"
 
-        print("[MQTT] Received from {topic}: {data}")
+            # ✅ Send email + voice alert when object too close
+            if proximity_alert and not email_sent:
+                subject = "⚠️ Smart Car Alert: Object Too Close!"
+                message = f"Warning! Your car detected an object very close.\n\nDistance: {distance_cm} cm\nLocation: ({car_lat}, {car_lng})"
+                send_email(subject, message)
+                speak("Warning! Object too close to your car!")
+                email_sent = True
+            elif not proximity_alert:
+                email_sent = False  # reset flag when safe again
+
+        print(f"[MQTT] Received from {topic}: {data}")
 
     except Exception as e:
-        print("[ERROR] Failed to process MQTT message: {e}")
+        print(f"[ERROR] Failed to process MQTT message: {e}")
 
 # MQTT Client Setup
 
@@ -129,3 +169,4 @@ if __name__ == "__main__":
     print("[INFO] Starting Smart Car Tracker Dashboard..........")
     print("[INFO] Flask running on http://localhost:5000")
     app.run(host="0.0.0.0", port=5000, debug=True)
+
