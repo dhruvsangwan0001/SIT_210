@@ -16,8 +16,8 @@ proximity_alert = False
 email_sent = False  # to prevent repeated emails
 
 # ---------- ThingSpeak Configuration ----------
-THINGSPEAK_API = "OPAPZZ0MCCOPS05E"  # replace with your key
-THINGSPEAK_URL = "https://api.thingspeak.com/update"
+THINGSPEAK_API = "O0NHH3F8Q709S0G9"  # replace with your key
+THINGSPEAK_URL = "https://thingspeak.mathworks.com/channels"
 
 # ---------- Email Configuration ----------
 EMAIL = "dhruvsangwan1196@gmail.com"
